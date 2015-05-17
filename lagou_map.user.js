@@ -1,12 +1,48 @@
 // ==UserScript==
 // @name          Lagou jobs map
 // @author        murchik <mixturchik@gmail.com>
-// @description   Fuck endless lists, find a job at the map.
+// @description   Fuck endless lists, find a job on a map.
 // @homepage      http://github.com/moorchegue
 // @match         *://*.lagou.com/jobs/list*
 // @version       0.0.1
 // @require       http://code.jquery.com/jquery-latest.min.js
 // ==/UserScript==
+
+//function GM_main ($) {
+    //alert ('jQuery is installed with no conflicts! The version is: ' + $.fn.jquery);
+//}
+
+//if (typeof $ === "function") {
+    //console.log ("Running with local copy of jQuery!");
+    //GM_main (jQuery);
+//}
+//else {
+    //console.log ("fetching jQuery from some 3rd-party server.");
+    //add_jQuery (GM_main, "1.7.2");
+//}
+
+//function add_jQuery (callbackFn, jqVersion) {
+    //var jqVersion   = jqVersion || "1.7.2";
+    //var D           = document;
+    //var targ        = D.getElementsByTagName ('head')[0] || D.body || D.documentElement;
+    //var scriptNode  = D.createElement ('script');
+    //scriptNode.src  = 'http://code.jquery.com/jquery-latest.min.js';
+    //scriptNode.addEventListener ("load", function () {
+        //console.log('hell yeah!');
+        //var scriptNode          = D.createElement ("script");
+        //scriptNode.textContent  =
+            //'var gm_jQuery  = jQuery.noConflict (true);\n'
+            //+ '(' + callbackFn.toString () + ')(gm_jQuery);'
+        //;
+        //targ.appendChild (scriptNode);
+    //}, false);
+    //targ.appendChild (scriptNode);
+//}
+
+
+//window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
+    //console.log("Oh, fuck: ( " + lineNumber + " ) " + errorMsg);
+//}
 
 function getPageOpenings(page) {
     var links = [];
@@ -28,12 +64,12 @@ function getPagesCount() {
 }
 
 function fetchOpening(url) {
+    url = 'http://www.lagou.com/jobs/598412.html'
     console.log('fetching opening ' + url);
-    $.ajax({ url: url }).done( function (output) {
+    $.ajax({url: url}).done( function (output) {
         var page = $(output);
         addToMap(page);
     });
-    console.log('ajax added');
 }
 
 function fetchAllOpenings(page) {
@@ -49,22 +85,74 @@ function fetchPage(url) {
 
 function getCoordinates(page) {
     console.log('getting coords');
-    var lng = page.getElementById('positionLng').value;
-    var lat = page.getElementById('positionLat').value;
+    var lng = page.find('input[id=positionLng]').first().val();
+    var lat = page.find('input[id=positionLat]').first().val();
+    console.log(lng + ', ' + lat);
     return { lng: lng, lat: lat }
+}
+
+function getAddress(page) {
+    console.log('getting address');
+    var address = page.find('dl[class=job_company] dd div').first().text()
+    console.log(address);
+    return address
+}
+
+function getMapScript(page) {
+    var script = page.find('script');
 }
 
 function addToMap(page) {
     console.log('page fetched!');
-    console.log(page);
+    initializeMap();
+    window.fuck = page
     coordinates = getCoordinates(page);
-    console.log(coordinates);
+    if (coordinates.lat && coordinates.lng) {
+        addByCoordinates(coordinates);
+    } else {
+        address = getAddress(page);
+        addByAddress(address);
+    }
+}
+
+function addByCoordinates(coordinates) {
+}
+
+function addByAddress(address) {
+}
+
+function initializeMap() {
+    if (document.getElementById('map')) {
+        console.log('map was already initialized');
+        return;
+    }
+    console.log('adding div');
+    var map_div = document.createElement('div');
+    map_div.id = 'map';
+    map_div.setAttribute('style', 'position: absolute; top: 0px; left: 0px; height: 500px; width: 600px; background: #333; border: solid 2px #A00;');
+    $('body').append(map_div);
+
+    console.log('adding script');
+    var script = document.createElement('script');
+    script.id = 'baidu-map'
+    script.type = 'text/javascript';
+    script.src = 'http://api.map.baidu.com/getscript?v=2.0&ak=6605604a7755e5d4f1216b19d8dda1b1&services=&t=20150514110922';
+    $('body').append(script);
+
+    var checkMap = window.setInterval(function() {
+        console.log('checking map');
+        if (typeof BMap !== undefined) {
+            console.log('making a map!');
+            map = new BMap.Map('map');
+            window.clearInterval(checkMap);
+        }
+    }, 1);
+
+    console.log('map done');
 }
 
 function makeMap() {
     console.log('>>>>>>>>>>>>>>>>>>>>>');
-
-    console.log($.ajax());
 
     var openings = getPageOpenings(document);
     console.log(openings);
@@ -72,8 +160,7 @@ function makeMap() {
     var pages = getPagesCount();
     console.log(pages);
 
-    fetchOpening(openings[0]);
-
+    fetchOpening(openings[2]);
 
     console.log('----------------------');
 }
