@@ -8,42 +8,6 @@
 // @require       http://code.jquery.com/jquery-latest.min.js
 // ==/UserScript==
 
-//function GM_main ($) {
-    //alert ('jQuery is installed with no conflicts! The version is: ' + $.fn.jquery);
-//}
-
-//if (typeof $ === "function") {
-    //console.log ("Running with local copy of jQuery!");
-    //GM_main (jQuery);
-//}
-//else {
-    //console.log ("fetching jQuery from some 3rd-party server.");
-    //add_jQuery (GM_main, "1.7.2");
-//}
-
-//function add_jQuery (callbackFn, jqVersion) {
-    //var jqVersion   = jqVersion || "1.7.2";
-    //var D           = document;
-    //var targ        = D.getElementsByTagName ('head')[0] || D.body || D.documentElement;
-    //var scriptNode  = D.createElement ('script');
-    //scriptNode.src  = 'http://code.jquery.com/jquery-latest.min.js';
-    //scriptNode.addEventListener ("load", function () {
-        //console.log('hell yeah!');
-        //var scriptNode          = D.createElement ("script");
-        //scriptNode.textContent  =
-            //'var gm_jQuery  = jQuery.noConflict (true);\n'
-            //+ '(' + callbackFn.toString () + ')(gm_jQuery);'
-        //;
-        //targ.appendChild (scriptNode);
-    //}, false);
-    //targ.appendChild (scriptNode);
-//}
-
-
-//window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
-    //console.log("Oh, fuck: ( " + lineNumber + " ) " + errorMsg);
-//}
-
 function getPageOpenings(page) {
     var links = [];
     var openings = page.getElementsByClassName('hot_pos_l');
