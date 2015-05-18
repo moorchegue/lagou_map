@@ -130,7 +130,6 @@ function addByCoordinates(coordinates, company, address, city) {
     var point = new BMap.Point(coordinates.lng, coordinates.lat);
     bmap.centerAndZoom(point, 11);
     addPoint(point, company, address, city);
-    return point;
 }
 
 function addByAddress(company, address, city) {
@@ -138,11 +137,8 @@ function addByAddress(company, address, city) {
     var gc = new BMap.Geocoder();
     gc.getPoint(address, function(point) {
         if (point) {
-            p = addByCoordinates(point, company, address, city);
-            setTimeout(function() {
-                bmap.centerAndZoom(p, 11);
-            }, 1000);
-      }
+            addByCoordinates(point, company, address, city);
+        }
     }, city);
 }
 
@@ -158,7 +154,7 @@ function initializeMap(page) {
     var map_div = document.createElement('div');
     map_div.id = 'map';
     map_div.setAttribute('style', 'height: 500px; width: 100%;');
-    $('#workplaceSelect').append(map_div);
+    $('#workplaceSelect').after(map_div);
 
     // smartass proxying script
     var proxy_script_url = getMapScript(page);
@@ -172,11 +168,14 @@ function initializeMap(page) {
         if (typeof BMap != 'undefined') {
             window.clearInterval(checkBMap);
             console.log('making a map!');
-            bmap = new BMap.Map('map');
-            bmap.addControl(new BMap.NavigationControl());
-            bmap.addControl(new BMap.MapTypeControl());
-            bmap.addControl(new BMap.OverviewMapControl());
-            bmap.enableScrollWheelZoom(true);
+            // HACK delay is for webkit
+            setTimeout(function() {
+                bmap = new BMap.Map('map');
+                bmap.addControl(new BMap.NavigationControl());
+                bmap.addControl(new BMap.MapTypeControl());
+                bmap.addControl(new BMap.OverviewMapControl());
+                bmap.enableScrollWheelZoom(true);
+            }, 2000);
         }
     }, 1000);
 
@@ -185,6 +184,8 @@ function initializeMap(page) {
 
 function makeMap() {
     console.log('>>>>>>>>>>>>>>>>>>>>>');
+
+    this.$ = this.jQuery = jQuery.noConflict(true);
 
     //var openings = getPageOpenings(document);
     //fetchOpening(openings[0]);
