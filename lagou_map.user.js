@@ -142,7 +142,6 @@ function addByAddress(company, address, city) {
             setTimeout(function() {
                 bmap.centerAndZoom(p, 11);
             }, 1000);
-            bmap.setZoom(11);
       }
     }, city);
 }
