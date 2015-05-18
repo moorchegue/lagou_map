@@ -67,7 +67,7 @@ function getCity(url) {
 }
 
 function getCompanyName(page) {
-    return page.find('dl[class=job_company] h2.fl').first().text();
+    return page.find('dl[class=job_company] h2.fl').first().contents().get(0).nodeValue;
 }
 
 function getOpeningId(url) {
