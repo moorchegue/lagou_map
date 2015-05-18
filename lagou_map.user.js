@@ -4,7 +4,7 @@
 // @description   Fuck endless lists, find a job on a map.
 // @homepage      http://github.com/moorchegue
 // @match         *://*.lagou.com/jobs/list*
-// @version       0.0.1
+// @version       0.0.2
 // @require       http://code.jquery.com/jquery-latest.min.js
 // ==/UserScript==
 
@@ -34,10 +34,9 @@ function getPagesCount() {
 function fetchOpening(url) {
     //url = 'http://www.lagou.com/jobs/598412.html'
     console.log('fetching opening ' + url);
-    var id = url.match(/jobs\/([0-9]+)\.html/)[1];
     $.ajax({url: url}).done( function (output) {
         var page = $(output);
-        addToMap(id, page);
+        addToMap(url, page);
     });
 }
 
@@ -53,41 +52,47 @@ function fetchPage(url) {
 }
 
 function getCoordinates(page) {
-    console.log('getting coords');
-    var lng = page.find('input[id=positionLng]').first().val();
-    var lat = page.find('input[id=positionLat]').first().val();
-    console.log(lng + ', ' + lat);
-    return { lng: lng, lat: lat }
+    return {
+        lng: page.find('input[id=positionLng]').first().val(),
+        lat: page.find('input[id=positionLat]').first().val()
+    }
 }
 
 function getAddress(page) {
-    console.log('getting address');
-    var address = page.find('dl[class=job_company] dd div').first().text()
-    console.log(address);
-    return address
+    return page.find('dl[class=job_company] dd div').first().text()
 }
 
-function getCity(page) {
-    return '北京';
+function getCity(url) {
+    return decodeURI(url).match(/(\?|\&)city=([^\&]+)/)[2];
 }
 
 function getCompanyName(page) {
-    var company = page.find('dl[class=job_company] h2.fl').first().text();
-    return company;
+    return page.find('dl[class=job_company] h2.fl').first().text();
+}
+
+function getOpeningId(url) {
+    return url.match(/jobs\/([0-9]+)\.html/)[1];
 }
 
 function getMapScript(page) {
-    var script = page.find('script');
+    var scripts = page.find('script');
+    for (var i = 0; i < scripts.length; i++) {
+        if (scripts[i].src.match('map\.baidu\.com')) {
+            return scripts[i].src;
+        }
+    }
 }
 
-function addToMap(id, page) {
+function addToMap(url, page) {
     console.log('page fetched!');
-    window.fuck = page
-    initializeMap();
+
+    initializeMap(page);
+
     var coordinates = getCoordinates(page);
     var address = getAddress(page);
-    var city = getCity(page);
+    var city = getCity(location);
     var company = getCompanyName(page);
+    var id = getOpeningId(url);
 
     checkMap[id] = window.setInterval(function() {
         console.log('check if map is ready');
@@ -142,7 +147,7 @@ function addByAddress(company, address, city) {
     }, city);
 }
 
-function initializeMap() {
+function initializeMap(page) {
     // do this only once
     if (document.getElementById('map')) {
         console.log('map was already initialized');
@@ -153,19 +158,17 @@ function initializeMap() {
     console.log('adding div');
     var map_div = document.createElement('div');
     map_div.id = 'map';
-    //map_div.setAttribute('style', 'position: absolute; top: 0px; left: 0px; height: 500px; width: 600px; background: #333; border: dotted 1px #A00;');
-    map_div.setAttribute('style', 'height: 500px; width: 100%; background: #333; border: dotted 1px #A00;');
+    map_div.setAttribute('style', 'height: 500px; width: 100%;');
     $('#workplaceSelect').append(map_div);
 
-    // injecting script
-    console.log('adding script');
-    var script = document.createElement('script');
-    script.id = 'baidu-map'
-    script.type = 'text/javascript';
-    script.src = 'http://api.map.baidu.com/getscript?v=2.0&ak=6605604a7755e5d4f1216b19d8dda1b1&services=&t=20150514110922';
-    $('body').append(script);
+    // smartass proxying script
+    var proxy_script_url = getMapScript(page);
+    console.log(proxy_script_url);
 
-    // FIX Somehow onload event is not supported for injected scripts
+    // jsonp magic
+    $.ajax({url: proxy_script_url, dataType: 'jsonp'});
+
+    // XXX jsonpCallback only runs after result is loaded, not the code executed
     checkBMap = window.setInterval(function() {
         if (typeof BMap != 'undefined') {
             window.clearInterval(checkBMap);
