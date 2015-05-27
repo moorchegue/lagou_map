@@ -12,14 +12,13 @@ var bmap;
 var checkBMap;
 var checkMap = {};
 
+function getOpeningUrl(opening) {
+    //return 'http://www.lagou.com/jobs/598412.html'
+    return opening.getElementsByTagName('a').item(0).href;
+}
+
 function getPageOpenings(page) {
-    var links = [];
-    var openings = page.getElementsByClassName('hot_pos_l');
-    for (var i = 0; i < openings.length; i++) {
-        var link = openings[i].getElementsByTagName('a').item(0).href;
-        links.push(link);
-    }
-    return links;
+    return page.querySelectorAll('.hot_pos_l');
 }
 
 function getPagesCount() {
@@ -31,12 +30,12 @@ function getPagesCount() {
     return parseInt(last_page.title);
 }
 
-function fetchOpening(url) {
-    //url = 'http://www.lagou.com/jobs/598412.html'
+function fetchOpening(opening) {
+    url = getOpeningUrl(opening);
     console.log('fetching opening ' + url);
     $.ajax({url: url}).done( function (output) {
         var page = $(output);
-        addToMap(url, page);
+        addToMap(opening, page);
     });
 }
 
@@ -70,7 +69,8 @@ function getCompanyName(page) {
     return page.find('dl[class=job_company] h2.fl').first().contents().get(0).nodeValue;
 }
 
-function getOpeningId(url) {
+function getOpeningId(opening) {
+    url = getOpeningUrl(opening);
     return url.match(/jobs\/([0-9]+)\.html/)[1];
 }
 
@@ -83,7 +83,7 @@ function getMapScript(page) {
     }
 }
 
-function addToMap(url, page) {
+function addToMap(opening, page) {
     console.log('page fetched!');
 
     initializeMap(page);
@@ -92,7 +92,7 @@ function addToMap(url, page) {
     var address = getAddress(page);
     var city = getCity(location);
     var company = getCompanyName(page);
-    var id = getOpeningId(url);
+    var id = getOpeningId(opening);
 
     checkMap[id] = window.setInterval(function() {
         console.log('check if map is ready');
@@ -100,16 +100,16 @@ function addToMap(url, page) {
             window.clearInterval(checkMap[id]);
             console.log('map is ready for ' + id + ': ' + checkMap[id]);
             if (coordinates.lat && coordinates.lng) {
-                addByCoordinates(coordinates, company, address, city);
+                addByCoordinates(coordinates, opening, company, address, city);
             } else {
-                addByAddress(company, address, city);
+                addByAddress(company, opening, address, city);
             }
         }
     }, 1000);
 
 }
 
-function addPoint(point, company, address, city) {
+function addPoint(point, opening, company, address, city) {
     //var icon = new BMap.Icon("markers.png", new BMap.Size(23, 25), {    
         //offset: new BMap.Size(10, 25),    
         //imageOffset: new BMap.Size(0, 0 - index * 25)
@@ -117,27 +117,28 @@ function addPoint(point, company, address, city) {
     marker = new BMap.Marker(point);
     bmap.addOverlay(marker);
 
-    var tooltip = '<h4>' + company + '</h4>' + '<p>' + address + ' (' + city + ')</p>';
-    var infoWindow = new BMap.InfoWindow(tooltip);
+    var header = '<h4>' + company + '</h4>';
+    var tooltip = $(opening).clone().html();
+    var infoWindow = new BMap.InfoWindow(header + tooltip);
 
     marker.addEventListener("click", function() {
         marker.openInfoWindow(infoWindow);
     });
 }
 
-function addByCoordinates(coordinates, company, address, city) {
+function addByCoordinates(coordinates, opening, company, address, city) {
     console.log('add by coords' + coordinates.lng + ', ' + coordinates.lat)
     var point = new BMap.Point(coordinates.lng, coordinates.lat);
     bmap.centerAndZoom(point, 11);
-    addPoint(point, company, address, city);
+    addPoint(point, opening, company, address, city);
 }
 
-function addByAddress(company, address, city) {
+function addByAddress(company, opening, address, city) {
     console.log('add by address' + address + ', ' + city);
     var gc = new BMap.Geocoder();
     gc.getPoint(address, function(point) {
         if (point) {
-            addByCoordinates(point, company, address, city);
+            addByCoordinates(point, opening, company, address, city);
         }
     }, city);
 }
